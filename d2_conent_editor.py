@@ -1,10 +1,12 @@
 import os
 from tkinter import *
 from tkinter.messagebox import showinfo
+from tkinter.ttk import Combobox
 import dbf
 
-# Глобальная переменная для таблицы GUnits.dbf
+# Глобальные переменные для таблиц
 GUNITS_TABLE = None
+LSUBRACE_TABLE = None
 
 # Массив полей, доступных для редактирования пользователем
 VISIBLE_FIELDS = [
@@ -47,23 +49,43 @@ FIELD_TYPES = {
     76: {'widget': Checkbutton}  # L - Logical (булевый)
 }
 
+# Глобальный массив для хранения пары (текст, идентификатор) из LSubRace.dbf
+global subrace_options
 
-def open_gunits_table(globals_dir):
-    """Открывает таблицу GUnits.dbf в режиме чтения-записи."""
-    global GUNITS_TABLE
+
+def open_tables(globals_dir):
+    """
+    Открывает две таблицы: основную (GUnits.dbf) в режиме чтения-записи,
+    и справочную (LSubRace.dbf) в режиме только-чтения.
+    """
+    global GUNITS_TABLE, LSUBRACE_TABLE, subrace_options
+
+    # Поиск и открытие основной таблицы
     gunits_path = None
+    lsubrace_path = None
 
     for filename in os.listdir(globals_dir):
         if filename.lower() == 'gunits.dbf':
             gunits_path = os.path.join(globals_dir, filename)
-            break
+        elif filename.lower() == 'lsubrace.dbf':
+            lsubrace_path = os.path.join(globals_dir, filename)
 
     if gunits_path:
         GUNITS_TABLE = dbf.Table(gunits_path)
-        GUNITS_TABLE.open(mode=dbf.READ_WRITE)  # Открываем таблицу в режиме чтения-записи
+        GUNITS_TABLE.open(mode=dbf.READ_WRITE)  # Открываем главную таблицу в режиме чтения-записи
         print(f'Файл GUnits.dbf открыт в режиме rw: {gunits_path}')
     else:
         raise FileNotFoundError('Файл GUnits.dbf не найден.')
+
+    if lsubrace_path:
+        LSUBRACE_TABLE = dbf.Table(lsubrace_path)
+        LSUBRACE_TABLE.open(mode=dbf.READ_ONLY)  # Открываем справочную таблицу в режиме только-чтения
+        print(f'Файл LSubRace.dbf открыт в режиме ro: {lsubrace_path}')
+
+        # Сбор пар (текст, идентификатор) из таблицы LSubRace.dbf
+        subrace_options = [(rec['TEXT'], rec['ID']) for rec in LSUBRACE_TABLE]
+    else:
+        raise FileNotFoundError('Файл LSubRace.dbf не найден.')
 
 
 def load_and_show_record(unit_id_entry):
@@ -103,7 +125,14 @@ def display_fields(record, table):
 
         value = getattr(record, field)
 
-        if widget_type == Checkbutton:
+        if field == 'SUBRACE':
+            # Специальная обработка для поля SUBRACE
+            # Нахождение текущего значения в опции
+            var = StringVar(value=next((txt for txt, id_val in subrace_options if id_val == value), ''))
+            widget = Combobox(fields_frame, values=[txt for txt, _ in subrace_options], textvariable=var)
+            widget.bind('<<ComboboxSelected>>', update_subrace_field)
+            widgets[field] = (widget, var)
+        elif widget_type == Checkbutton:
             var = BooleanVar(value=value)
             widget = Checkbutton(fields_frame, variable=var)
             widgets[field] = (widget, var)
@@ -120,14 +149,25 @@ def display_fields(record, table):
         widget.grid(row=idx, column=1, padx=(5, 10), sticky=W + E)
 
 
+def update_subrace_field(event):
+    """
+    Просто запоминает выбранное значение, без немедленного изменения записи.
+    """
+    pass  # Больше ничего не делаем тут
+
+
 def save_changes():
     global current_record
     changes = {}
 
     for field_name, widget in widgets.items():
-        if isinstance(widget, tuple):  # Логическое поле
-            _, bool_var = widget
-            changes[field_name] = bool_var.get()
+        if isinstance(widget, tuple):  # Логическое поле или Combobox
+            if isinstance(widget[0], Combobox):
+                # Берём текущее значение из Combobox
+                changes[field_name] = next((id_val for txt, id_val in subrace_options if txt == widget[0].get()), None)
+            else:
+                _, bool_var = widget
+                changes[field_name] = bool_var.get()
         else:
             changes[field_name] = widget.get()
 
@@ -142,6 +182,10 @@ def save_changes():
 
 
 def rollback_changes(table):
+    """
+    Восстанавливает исходные значения всех полей.
+    """
+    global current_record
     display_fields(current_record, table)  # Передаем таблицу в функцию
 
 
@@ -171,7 +215,7 @@ def select_directory():
 
     if globals_dir:
         try:
-            open_gunits_table(globals_dir)  # Пробуем открыть таблицу
+            open_tables(globals_dir)  # Пробуем открыть таблицы
         except FileNotFoundError as e:
             print(str(e))
     else:
