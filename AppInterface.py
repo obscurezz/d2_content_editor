@@ -238,8 +238,21 @@ class AppInterface(tk.Tk):
         self.display_fields()
 
     def rollback_changes(self):
-        if self.current_record != self.original_record:
-            self.db_manager.restore_original_state(self.current_record, self.original_record)
+        tables_rollbacked = 0
+        if self.current_gunit != self.original_gunit:
+            self.db_manager.restore_original_state(self.current_gunit, self.original_gunit)
+            tables_rollbacked += 1
+        if self.current_gattack_1 != self.original_gattack_1:
+            self.db_manager.restore_original_state(self.current_gattack_1, self.original_gattack_1)
+            tables_rollbacked += 1
+        if self.current_gattack_2 != self.original_gattack_2:
+            self.db_manager.restore_original_state(self.current_gattack_2, self.original_gattack_2)
+            tables_rollbacked += 1
+        if self.current_gattack_alt != self.original_gattack_alt:
+            self.db_manager.restore_original_state(self.current_gattack_alt, self.original_gattack_alt)
+            tables_rollbacked += 1
+
+        if tables_rollbacked > 0:
             messagebox.showinfo('Успех!', 'Изменения отменены и запись восстановлена.')
         else:
             messagebox.showinfo('Информирование', 'Нет изменений для отката.')
