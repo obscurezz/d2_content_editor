@@ -18,52 +18,73 @@ class AppInterface(tk.Tk):
         self.create_ui()
 
     def create_ui(self):
-        frame = tk.Frame(self)
-        frame.pack(expand=True, fill='both')
+        main_frame = tk.Frame(self)
+        main_frame.pack(expand=True, fill='both')
 
-        # Верхняя панель
-        top_panel = tk.Frame(frame)
-        top_panel.pack(side='top', anchor='w', pady=10)
+        # Верхний сегмент (примерно 10%) - панель ввода
+        top_segment = tk.Frame(main_frame, height=int(self.winfo_screenheight() * 0.1))
+        top_segment.configure(background='lightgreen')
 
-        # Вход для директории
-        directory_label = tk.Label(top_panel, text='Путь к родительскому каталогу:', font=('Arial', 12))
-        directory_label.pack(side='left')
-        self.directory_entry = tk.Entry(top_panel, width=50)
+        # Директория
+        directory_label = tk.Label(top_segment, text='Путь к родительскому каталогу:', font=('Arial', 12))
+        directory_label.pack(side='left', padx=10)
+        self.directory_entry = tk.Entry(top_segment, width=50)
         self.directory_entry.pack(side='left', padx=10)
 
         # Кнопка "Выбрать директорию"
-        select_dir_btn = tk.Button(top_panel, text='Выбрать директорию', command=self.select_directory)
+        select_dir_btn = tk.Button(top_segment, text='Выбрать директорию', command=self.select_directory)
         select_dir_btn.pack(side='left', padx=10)
 
-        # Средняя панель
-        middle_panel = tk.Frame(frame)
-        middle_panel.pack(side='top', anchor='w', pady=10)
-
-        # Вход для ID
-        unit_id_label = tk.Label(middle_panel, text='ID единицы (UNIT_ID)', font=('Arial', 12))
-        unit_id_label.pack(side='left')
-        self.unit_id_entry = tk.Entry(middle_panel, width=30)
+        # ID
+        unit_id_label = tk.Label(top_segment, text='ID единицы (UNIT_ID)', font=('Arial', 12))
+        unit_id_label.pack(side='left', padx=10)
+        self.unit_id_entry = tk.Entry(top_segment, width=30)
         self.unit_id_entry.pack(side='left', padx=10)
 
         # Кнопка "Загрузить запись"
-        load_btn = tk.Button(middle_panel, text='Загрузить запись', command=self.load_and_show_record)
+        load_btn = tk.Button(top_segment, text='Загрузить запись', command=self.load_and_show_record)
         load_btn.pack(side='left', padx=10)
 
-        # Нижняя панель (переносим в нижний левый угол)
-        bottom_panel = tk.Frame(frame)
-        bottom_panel.pack(side='bottom', anchor='sw', pady=10)
+        top_segment.pack(side=tk.TOP, fill='x')
+
+        # Центральный сегмент (примерно 80%) - зона отображения данных
+        center_segment = tk.Frame(main_frame)
+        center_segment.configure(background='lightblue')
+
+        # Левая колонка "Общее"
+        self.data_frame_left = tk.LabelFrame(center_segment, text="Общее", relief='groove', borderwidth=1)
+        self.data_frame_left.grid(row=0, column=0, sticky='nsew')
+
+        # Центральная колонка (пока пустая)
+        self.data_frame_mid = tk.LabelFrame(center_segment, text="Атака", relief='groove', borderwidth=1)
+        self.data_frame_mid.grid(row=0, column=1, sticky='nsew')
+
+        # Правая колонка (пока пустая)
+        self.data_frame_right = tk.LabelFrame(center_segment, text="Защита", relief='groove', borderwidth=1)
+        self.data_frame_right.grid(row=0, column=2, sticky='nsew')
+
+        for col in range(3):
+            center_segment.columnconfigure(col, weight=1)
+
+        center_segment.pack(expand=True, fill='both')
+
+        # Нижний сегмент (примерно 10%) - панель управления
+        bottom_segment = tk.Frame(main_frame, height=int(self.winfo_screenheight() * 0.1))
+        bottom_segment.configure(background='lightgray')
 
         # Кнопка "Применить изменения"
-        apply_btn = tk.Button(bottom_panel, text='Применить изменения', command=self.save_changes)
+        apply_btn = tk.Button(bottom_segment, text='Применить изменения', command=self.save_changes)
         apply_btn.pack(side='left', padx=10)
 
         # Кнопка "Отменить изменения"
-        cancel_btn = tk.Button(bottom_panel, text='Отменить изменения', command=self.cancel_changes)
+        cancel_btn = tk.Button(bottom_segment, text='Отменить изменения', command=self.cancel_changes)
         cancel_btn.pack(side='left', padx=10)
 
         # Кнопка "Откатить изменения"
-        rollback_btn = tk.Button(bottom_panel, text='Откатить изменения', command=self.rollback_changes)
+        rollback_btn = tk.Button(bottom_segment, text='Откатить изменения', command=self.rollback_changes)
         rollback_btn.pack(side='left', padx=10)
+
+        bottom_segment.pack(side=tk.BOTTOM, fill='x')
 
     def select_directory(self):
         directory = self.directory_entry.get().strip()
@@ -94,8 +115,7 @@ class AppInterface(tk.Tk):
             messagebox.showerror('Ошибка!', f'Запись с UNIT_ID={unit_id} не найдена.')
 
     def display_fields(self):
-        fields_frame = tk.Frame(self)
-        fields_frame.pack(expand=True, fill='both')
+        fields_frame = self.data_frame_left
         self.widgets.clear()
 
         for idx, field in enumerate(settings.VISIBLE_FIELDS):
