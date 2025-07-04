@@ -8,11 +8,17 @@ import settings
 class AppInterface(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title('Редактирование записей GUnits.dbf')
-        self.geometry('800x600')
+        self.title('D2ContentEditor')
+        self.geometry('1024x768')
         self.widgets = {}
-        self.current_record = None
-        self.original_record = None
+        self.current_gunit = None
+        self.original_gunit = None
+        self.current_gattack_1 = None
+        self.original_gattack_1 = None
+        self.current_gattack_2 = None
+        self.original_gattack_2 = None
+        self.current_gattack_alt = None
+        self.original_gattack_alt = None
         self.db_manager = DatabaseManager.DatabaseManager()
 
         self.create_ui()
@@ -51,19 +57,27 @@ class AppInterface(tk.Tk):
         center_segment = tk.Frame(main_frame)
         center_segment.configure(background='lightblue')
 
-        # Левая колонка "Общее"
+        # Левая колонка
         self.data_frame_left = tk.LabelFrame(center_segment, text="Общее", relief='groove', borderwidth=1)
         self.data_frame_left.grid(row=0, column=0, sticky='nsew')
 
-        # Центральная колонка (пока пустая)
-        self.data_frame_mid = tk.LabelFrame(center_segment, text="Атака", relief='groove', borderwidth=1)
-        self.data_frame_mid.grid(row=0, column=1, sticky='nsew')
+        # Центральная колонка 1
+        self.data_frame_mid_1 = tk.LabelFrame(center_segment, text="Атака 1", relief='groove', borderwidth=1)
+        self.data_frame_mid_1.grid(row=0, column=1, sticky='nsew')
+
+        # Центральная колонка 2
+        self.data_frame_mid_2 = tk.LabelFrame(center_segment, text="Атака 2", relief='groove', borderwidth=1)
+        self.data_frame_mid_2.grid(row=0, column=2, sticky='nsew')
+
+        # Центральная колонка 2
+        self.data_frame_mid_3 = tk.LabelFrame(center_segment, text="Альтернативная атака", relief='groove', borderwidth=1)
+        self.data_frame_mid_3.grid(row=0, column=3, sticky='nsew')
 
         # Правая колонка (пока пустая)
         self.data_frame_right = tk.LabelFrame(center_segment, text="Защита", relief='groove', borderwidth=1)
-        self.data_frame_right.grid(row=0, column=2, sticky='nsew')
+        self.data_frame_right.grid(row=0, column=4, sticky='nsew')
 
-        for col in range(3):
+        for col in range(5):
             center_segment.columnconfigure(col, weight=1)
 
         center_segment.pack(expand=True, fill='both')
@@ -106,74 +120,118 @@ class AppInterface(tk.Tk):
 
         record = self.db_manager.fetch_record_by_unit_id(unit_id)
         if record:
-            # Здесь просто сохраним ссылку на оригинальную запись
-            self.original_record = record
-            self.current_record = record
-            # Сохраняем оригинальную запись
+            self.current_gunit = record
+            self.original_gunit = self.current_gunit
+
+            # Загрузка данных атак
+            first_attack_id = getattr(record, 'ATTACK_ID')
+            second_attack_id = getattr(record, 'ATTACK2_ID')
+
+            first_attack = self.db_manager.fetch_attack_by_att_id(first_attack_id)
+            second_attack = self.db_manager.fetch_attack_by_att_id(
+                second_attack_id) if second_attack_id != 'g000000000' else None
+
+            alternate_attack_id = getattr(first_attack, 'ALT_ATTACK')
+            alternate_attack = self.db_manager.fetch_attack_by_att_id(alternate_attack_id) if alternate_attack_id != 'g000000000' else None
+
+            if first_attack:
+                self.current_gattack_1 = first_attack
+                self.original_gattack_1 = self.current_gattack_1
+
+            if second_attack:
+                self.current_gattack_2 = second_attack
+                self.original_gattack_2 = self.current_gattack_2
+
+            if alternate_attack:
+                self.current_gattack_alt = alternate_attack
+                self.original_gattack_alt = self.current_gattack_alt
+
             self.display_fields()
         else:
             messagebox.showerror('Ошибка!', f'Запись с UNIT_ID={unit_id} не найдена.')
 
     def display_fields(self):
-        fields_frame = self.data_frame_left
         self.widgets.clear()
+        for fields_frame in [self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3, self.data_frame_right]:
+            self.widgets[fields_frame] = {}
+            visible = []
+            record = None
+            table = None
+            if fields_frame == self.data_frame_left:
+                visible = settings.VISIBLE_FIELDS_GUNITS
+                record = self.current_gunit
+                table = self.db_manager.GUNITS_TABLE
+            if fields_frame == self.data_frame_mid_1:
+                visible = settings.VISIBLE_FIELDS_GATTACKS
+                record = self.current_gattack_1
+                table = self.db_manager.GATTACKS_TABLE
+            if fields_frame == self.data_frame_mid_2:
+                visible = settings.VISIBLE_FIELDS_GATTACKS
+                record = self.current_gattack_2
+                table = self.db_manager.GATTACKS_TABLE
+            if fields_frame == self.data_frame_mid_3:
+                visible = settings.VISIBLE_FIELDS_GATTACKS
+                record = self.current_gattack_alt
+                table = self.db_manager.GATTACKS_TABLE
 
-        for idx, field in enumerate(settings.VISIBLE_FIELDS):
-            label_text = field + ': '
-            field_code = type(getattr(self.current_record, field)).__name__
-            widget_type = settings.FIELD_TYPES.get(field_code, {'widget': 'Entry'})
-            # widget_class = eval(widget_type['widget'])
+            if record:
+                for idx, field in enumerate(visible):
+                    label_text = field + ': '
+                    field_code = table.field_info(field)[0]
+                    widget_type = settings.FIELD_TYPES.get(field_code, {'widget': 'Entry'})
 
-            label = tk.Label(fields_frame, text=label_text)
-            label.grid(row=idx, column=0, sticky='e')
+                    label = tk.Label(fields_frame, text=label_text)
+                    label.grid(row=idx, column=0, sticky='e')
 
-            value = getattr(self.current_record, field)
+                    value = getattr(record, field)
 
-            if field == 'SUBRACE':
-                # Специальная обработка для поля SUBRACE
-                subrace_options = self.db_manager.get_subrace_options()
-                var = tk.StringVar(value=subrace_options.get(value, ''))
-                widget = Combobox(fields_frame, values=list(subrace_options.values()), textvariable=var)
-                widget.config(textvariable=var)
-                widget.bind('<<ComboboxSelected>>', self.update_subrace_field)
-                self.widgets[field] = (widget, var)
-            elif widget_type['widget'] == 'Checkbutton':
-                var = tk.BooleanVar(value=value)
-                widget = tk.Checkbutton(fields_frame, variable=var)
-                self.widgets[field] = (widget, var)
-            elif widget_type['widget'] == 'Spinbox':
-                widget = tk.Spinbox(fields_frame, from_=-999999, to=999999)
-                widget.delete(0, tk.END)
-                widget.insert(0, value or '')
-                self.widgets[field] = widget
-            else:
-                widget = tk.Entry(fields_frame)
-                widget.insert(0, value or '')
-                self.widgets[field] = widget
+                    if field in ('SUBRACE', 'SOURCE', 'CLASS', 'REACH'):
+                        catalog_options = self.db_manager.get_catalog_options(field)
+                        var = tk.StringVar(value=catalog_options.get(value, ''))
+                        widget = Combobox(fields_frame, values=list(catalog_options.values()), textvariable=var)
+                        widget.bind('<<ComboboxSelected>>', self.update_combobox_field)
+                        self.widgets[fields_frame][field] = (widget, var)
+                    elif widget_type['widget'] == 'Checkbutton':
+                        var = tk.BooleanVar(value=value)
+                        widget = tk.Checkbutton(fields_frame, variable=var)
+                        self.widgets[fields_frame][field] = (widget, var)
+                    elif widget_type['widget'] == 'Spinbox':
+                        widget = tk.Spinbox(fields_frame, from_=-999999, to=999999)
+                        widget.delete(0, tk.END)
+                        widget.insert(0, value or '')
+                        self.widgets[fields_frame][field] = widget
+                    else:
+                        widget = tk.Entry(fields_frame)
+                        widget.insert(0, value or '')
+                        self.widgets[fields_frame][field] = widget
 
-            widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
+                    widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
 
-    def update_subrace_field(self, event=None):
-        # selection = self.widgets['SUBRACE'][0].get()
-        # if selection:
-        #     subrace_id = self.db_manager.get_subrace_id(selection)
-        #     if subrace_id:
-        #         self.current_record.SUBRACE = subrace_id
+    def update_combobox_field(self, event=None):
         pass
 
     def save_changes(self):
-        changes = {}
-        for field_name, widget in self.widgets.items():
-            if isinstance(widget, tuple):  # Логическое поле или Combobox
-                if isinstance(widget[0], Combobox):
-                    changes[field_name] = self.db_manager.get_subrace_id(widget[0].get())
+        for frame, frame_data in self.widgets.items():
+            changes = {}
+            for field_name, widget in frame_data.items():
+                if isinstance(widget, tuple):
+                    if isinstance(widget[0], Combobox):
+                        changes[field_name] = self.db_manager.get_catalog_id(field_name, widget[0].get())
+                    else:
+                        _, bool_var = widget
+                        changes[field_name] = bool_var.get()
                 else:
-                    _, bool_var = widget
-                    changes[field_name] = bool_var.get()
-            else:
-                changes[field_name] = widget.get()
+                    changes[field_name] = widget.get()
 
-        self.db_manager.update_record(self.current_record, changes)
+            if frame == self.data_frame_left and self.current_gunit:
+                self.db_manager.update_record(self.current_gunit, changes)
+            if frame == self.data_frame_mid_1 and self.current_gattack_1:
+                self.db_manager.update_record(self.current_gattack_1, changes)
+            if frame == self.data_frame_mid_2 and self.current_gattack_2:
+                self.db_manager.update_record(self.current_gattack_2, changes)
+            if frame == self.data_frame_mid_3 and self.current_gattack_alt:
+                self.db_manager.update_record(self.current_gattack_alt, changes)
+
         messagebox.showinfo('Успех!', 'Данные успешно сохранены!')
 
     def cancel_changes(self):
