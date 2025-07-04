@@ -19,6 +19,12 @@ class AppInterface(tk.Tk):
         self.original_gattack_2 = None
         self.current_gattack_alt = None
         self.original_gattack_alt = None
+
+        self.source_immunities_widgets = {}
+        self.class_immunities_widgets = {}
+        self.source_immunities = None
+        self.class_immunities = None
+
         self.db_manager = DatabaseManager.DatabaseManager()
 
         self.create_ui()
@@ -73,9 +79,18 @@ class AppInterface(tk.Tk):
         self.data_frame_mid_3 = tk.LabelFrame(center_segment, text="Альтернативная атака", relief='groove', borderwidth=1)
         self.data_frame_mid_3.grid(row=0, column=3, sticky='nsew')
 
-        # Правая колонка (пока пустая)
+        # Правая колонка
         self.data_frame_right = tk.LabelFrame(center_segment, text="Защита", relief='groove', borderwidth=1)
         self.data_frame_right.grid(row=0, column=4, sticky='nsew')
+
+        self.immunity_source = tk.LabelFrame(self.data_frame_right, text="Источники", relief='groove', borderwidth=1)
+        self.immunity_source.grid(row=0, column=0, sticky='nsew')
+
+        self.immunity_class = tk.LabelFrame(self.data_frame_right, text="Классы", relief='groove', borderwidth=1)
+        self.immunity_class.grid(row=1, column=0, sticky='nsew')
+
+        for row in range(2):
+            self.data_frame_right.rowconfigure(row, weight=1)
 
         for col in range(5):
             center_segment.columnconfigure(col, weight=1)
@@ -120,8 +135,8 @@ class AppInterface(tk.Tk):
 
         record = self.db_manager.fetch_record_by_unit_id(unit_id)
         if record:
-            self.current_gunit = record
             self.original_gunit = self.current_gunit
+            self.current_gunit = record
 
             # Загрузка данных атак
             first_attack_id = getattr(record, 'ATTACK_ID')
@@ -135,24 +150,29 @@ class AppInterface(tk.Tk):
             alternate_attack = self.db_manager.fetch_attack_by_att_id(alternate_attack_id) if alternate_attack_id != 'g000000000' else None
 
             if first_attack:
-                self.current_gattack_1 = first_attack
                 self.original_gattack_1 = self.current_gattack_1
+                self.current_gattack_1 = first_attack
 
             if second_attack:
-                self.current_gattack_2 = second_attack
                 self.original_gattack_2 = self.current_gattack_2
+                self.current_gattack_2 = second_attack
 
             if alternate_attack:
-                self.current_gattack_alt = alternate_attack
                 self.original_gattack_alt = self.current_gattack_alt
+                self.current_gattack_alt = alternate_attack
+
+            self.source_immunities = self.db_manager.fetch_source_immunities_by_unit_id(unit_id)
+            self.class_immunities = self.db_manager.fetch_class_immunities_by_unit_id(unit_id)
 
             self.display_fields()
+            self.display_immunities('SOURCE')
+            self.display_immunities('CLASS')
         else:
             messagebox.showerror('Ошибка!', f'Запись с UNIT_ID={unit_id} не найдена.')
 
     def display_fields(self):
         self.widgets.clear()
-        for fields_frame in [self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3, self.data_frame_right]:
+        for fields_frame in [self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3]:
             self.widgets[fields_frame] = {}
             visible = []
             record = None
@@ -207,6 +227,48 @@ class AppInterface(tk.Tk):
 
                     widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
 
+    def display_immunities(self, immu_type):
+        if immu_type == 'SOURCE':
+            self.source_immunities_widgets.clear()
+            frame = self.immunity_source
+            records = self.source_immunities
+            widgets = self.source_immunities_widgets
+        elif immu_type == 'CLASS':
+            self.class_immunities_widgets.clear()
+            frame = self.immunity_class
+            records = self.class_immunities
+            widgets = self.class_immunities_widgets
+        else:
+            return
+
+        if records:
+            for x, record in enumerate(records):
+                self.immunity_frame = tk.LabelFrame(frame, text=f"{immu_type} {str(x+1)}", relief='groove', borderwidth=1)
+                self.immunity_frame.grid(row=x, column=0, sticky='nsew')
+                for idx, field in enumerate(self.db_manager.GIMMU_TABLE.field_names):
+                    if field == 'UNIT_ID':
+                        pass
+                    else:
+                        label_text = field + ': '
+
+                        label = tk.Label(self.immunity_frame, text=label_text)
+                        label.grid(row=idx, column=0, sticky='e')
+
+                        value = getattr(record, field)
+
+                        if field == 'IMMUNITY':
+                            catalog_options = self.db_manager.get_catalog_options(immu_type)
+                        else:
+                            catalog_options = self.db_manager.get_catalog_options(field)
+
+                        widget = tk.Entry(self.immunity_frame)
+                        widget.insert(0, catalog_options.get(value, '') or '')
+                        widgets[field] = widget
+
+                        widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
+                # delete_btn = tk.Button(self.immunity_frame, text='Удалить', command=self.delete_immunity(record))
+                # delete_btn.grid(row=4)
+
     def update_combobox_field(self, event=None):
         pass
 
@@ -236,6 +298,8 @@ class AppInterface(tk.Tk):
 
     def cancel_changes(self):
         self.display_fields()
+        self.display_immunities('SOURCE')
+        self.display_immunities('CLASS')
 
     def rollback_changes(self):
         tables_rollbacked = 0
@@ -256,3 +320,6 @@ class AppInterface(tk.Tk):
             messagebox.showinfo('Успех!', 'Изменения отменены и запись восстановлена.')
         else:
             messagebox.showinfo('Информирование', 'Нет изменений для отката.')
+
+    def delete_immunity(self, record):
+        return self.db_manager.delete_record(record)
