@@ -86,18 +86,22 @@ class AppInterface(tk.Tk):
                                               width=int(self.winfo_width() * 0.2))
         self.data_frame_right.grid(row=0, column=4, sticky='nsew')
 
+        add_source_btn = tk.Button(self.data_frame_right, text="Add source resistance", height=1,
+                                   command=lambda: self.open_add_window('SOURCE'))
+        add_source_btn.grid(row=0, sticky='nsew', padx=10, pady=10)
+
+        add_class_btn = tk.Button(self.data_frame_right, text="Add class resistance", height=1,
+                                  command=lambda: self.open_add_window('CLASS'))
+        add_class_btn.grid(row=1, sticky='nsew', padx=10, pady=10)
+
         self.immunity_source_frame = tk.LabelFrame(self.data_frame_right, text="Sources", relief='groove',
                                                    borderwidth=1)
-        self.immunity_source_frame.grid(row=0, column=0, sticky='nsew')
-        # add_source_btn = tk.Button(self.immunity_source_frame, text="Добавить защиту от источника")
-        # add_source_btn.pack(side='top', padx=10)
+        self.immunity_source_frame.grid(row=2, column=0, sticky='nsew')
 
         self.immunity_class_frame = tk.LabelFrame(self.data_frame_right, text="Classes", relief='groove', borderwidth=1)
-        self.immunity_class_frame.grid(row=1, column=0, sticky='nsew')
-        # add_class_btn = tk.Button(self.immunity_class_frame, text="Добавить защиту от класса")
-        # add_class_btn.pack(side='top', padx=10)
+        self.immunity_class_frame.grid(row=3, column=0, sticky='nsew')
 
-        for row in range(2):
+        for row in (2, 3):
             self.data_frame_right.rowconfigure(row, weight=1)
 
         for col in range(5):
@@ -122,17 +126,40 @@ class AppInterface(tk.Tk):
 
         bottom_segment.pack(side=tk.BOTTOM, fill='x')
 
-    def open_new_window(self, rec, immu_type):
+    def open_add_window(self, immu_type):
+        unit_id = self.unit_id_entry.get().strip()
+
         new_window = tk.Toplevel(master=self)
-        new_window.title("Show me the record")
-        new_window.geometry("400x200")
+        new_window.title(f"Add {immu_type} record for {unit_id}")
+        new_window.geometry("400x150")
 
-        text_list = []
-        for item in rec:
-            text_list.append(str(item))
-        text = ' '.join(text_list)
+        inner_widgets = {}
 
-        tk.Label(new_window, text=f'{immu_type} {text}').pack(pady=20)
+        for i in (0, 1):
+            if i == 0:
+                text = immu_type
+            else:
+                text = 'IMMUNECAT'
+            names_array = self.db_manager.get_catalog_options(text)
+
+            name_label = tk.Label(new_window, text=f'{text}: ')
+            name_label.grid(row=i, column=0, sticky='e')
+
+            name_var = tk.StringVar()
+            names_widget = Combobox(new_window, values=list(names_array.values()), textvariable=name_var)
+            names_widget.bind('<<ComboboxSelected>>', self.update_combobox_field())
+            names_widget.grid(row=i, column=1, padx=(5, 10), sticky='we')
+
+            inner_widgets[i] = (names_widget, name_var)
+
+        apply_button = tk.Button(new_window, text="Apply", command=lambda: self.add_immunity(
+            data={'UNIT_ID': unit_id,
+                  'IMMUNITY': self.db_manager.get_catalog_id(immu_type, inner_widgets.get(0)[1].get()),
+                  'IMMUNECAT': self.db_manager.get_catalog_id('IMMUNECAT', inner_widgets.get(1)[1].get())},
+            immu_type=immu_type))
+        apply_button.grid(row=4, column=0)
+        cancel_button = tk.Button(new_window, text="Cancel", command=lambda: new_window.destroy())
+        cancel_button.grid(row=4, column=1)
 
     def select_directory(self):
         directory = self.directory_entry.get().strip()
@@ -363,10 +390,25 @@ class AppInterface(tk.Tk):
             messagebox.showinfo(title='INFO', message='Nothing to rollback.')
 
     def delete_immunity(self, record, immu_type):
+        self.db_manager.delete_record(record)
+
         text_list = []
         for item in record:
             text_list.append(str(item))
         text = ' '.join(text_list)
-        self.db_manager.delete_record(record)
-
         messagebox.showinfo(title='INFO', message=f'Immunity "{text}" with type {immu_type} has been deleted.')
+
+    def add_immunity(self, data, immu_type):
+        table = None
+        if immu_type == 'SOURCE':
+            table = self.db_manager.GIMMU_TABLE
+        if immu_type == 'CLASS':
+            table = self.db_manager.GIMMUC_TABLE
+
+        self.db_manager.add_record(table=table, data=data)
+
+        text_list = []
+        for item in data.values():
+            text_list.append(str(item))
+        text = ' '.join(text_list)
+        messagebox.showinfo(title='INFO', message=f'Immunity "{text}" with type {immu_type} has been added.')

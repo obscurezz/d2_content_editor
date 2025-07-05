@@ -88,35 +88,35 @@ class DatabaseManager:
         if lsubrace_path:
             self.LSUBRACE_TABLE = dbf.Table(lsubrace_path)
             self.LSUBRACE_TABLE.open(mode=dbf.READ_ONLY)
-            self.subrace_options = {rec.ID: rec.TEXT for rec in self.LSUBRACE_TABLE}
+            self.subrace_options = {rec.ID: rec.TEXT for rec in self.LSUBRACE_TABLE if not is_deleted(rec)}
         else:
             return False
 
         if latts_path:
             self.LATTS_TABLE = dbf.Table(latts_path)
             self.LATTS_TABLE.open(mode=dbf.READ_ONLY)
-            self.attack_source_options = {rec.ID: rec.TEXT for rec in self.LATTS_TABLE}
+            self.attack_source_options = {rec.ID: rec.TEXT for rec in self.LATTS_TABLE if not is_deleted(rec)}
         else:
             return False
 
         if lattc_path:
             self.LATTC_TABLE = dbf.Table(lattc_path)
             self.LATTC_TABLE.open(mode=dbf.READ_ONLY)
-            self.attack_class_options = {rec.ID: rec.TEXT for rec in self.LATTC_TABLE}
+            self.attack_class_options = {rec.ID: rec.TEXT for rec in self.LATTC_TABLE if not is_deleted(rec)}
         else:
             return False
 
         if lattr_path:
             self.LATTR_TABLE = dbf.Table(lattr_path)
             self.LATTR_TABLE.open(mode=dbf.READ_ONLY)
-            self.attack_reach_options = {rec.ID: rec.TEXT for rec in self.LATTR_TABLE}
+            self.attack_reach_options = {rec.ID: rec.TEXT for rec in self.LATTR_TABLE if not is_deleted(rec)}
         else:
             return False
 
         if limmune_path:
             self.LIMMUNE_TABLE = dbf.Table(limmune_path)
             self.LIMMUNE_TABLE.open(mode=dbf.READ_ONLY)
-            self.immunity_options = {rec.ID: rec.TEXT for rec in self.LIMMUNE_TABLE}
+            self.immunity_options = {rec.ID: rec.TEXT for rec in self.LIMMUNE_TABLE if not is_deleted(rec)}
         else:
             return False
 
@@ -178,3 +178,6 @@ class DatabaseManager:
 
     def delete_record(self, record):
         dbf.delete(record)
+
+    def add_record(self, table: dbf.Table, data: tuple):
+        table.append(data=data)
