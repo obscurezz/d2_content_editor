@@ -37,23 +37,23 @@ class AppInterface(tk.Tk):
         top_segment = tk.Frame(main_frame, height=int(self.winfo_screenheight() * 0.1))
 
         # Директория
-        directory_label = tk.Label(top_segment, text='Путь к родительскому каталогу:', font=('Arial', 12))
+        directory_label = tk.Label(top_segment, text='Absolute game path:', font=('Arial', 12))
         directory_label.pack(side='left', padx=10)
         self.directory_entry = tk.Entry(top_segment, width=50)
         self.directory_entry.pack(side='left', padx=10)
 
         # Кнопка "Выбрать директорию"
-        select_dir_btn = tk.Button(top_segment, text='Выбрать директорию', command=self.select_directory)
+        select_dir_btn = tk.Button(top_segment, text='Choose the directory', command=self.select_directory)
         select_dir_btn.pack(side='left', padx=10)
 
         # ID
-        unit_id_label = tk.Label(top_segment, text='ID единицы (UNIT_ID)', font=('Arial', 12))
+        unit_id_label = tk.Label(top_segment, text='Unit ID:', font=('Arial', 12))
         unit_id_label.pack(side='left', padx=10)
         self.unit_id_entry = tk.Entry(top_segment, width=30)
         self.unit_id_entry.pack(side='left', padx=10)
 
         # Кнопка "Загрузить запись"
-        load_btn = tk.Button(top_segment, text='Загрузить запись', command=self.load_and_show_record)
+        load_btn = tk.Button(top_segment, text='Load the record', command=self.load_and_show_record)
         load_btn.pack(side='left', padx=10)
 
         top_segment.pack(side=tk.TOP, fill='x')
@@ -62,37 +62,37 @@ class AppInterface(tk.Tk):
         center_segment = tk.Frame(main_frame)
 
         # Левая колонка
-        self.data_frame_left = tk.LabelFrame(center_segment, text="Общее", relief='groove', borderwidth=1,
+        self.data_frame_left = tk.LabelFrame(center_segment, text="Main", relief='groove', borderwidth=1,
                                              width=int(self.winfo_width() * 0.2))
         self.data_frame_left.grid(row=0, column=0, sticky='nsew')
 
         # Центральная колонка 1
-        self.data_frame_mid_1 = tk.LabelFrame(center_segment, text="Атака 1", relief='groove', borderwidth=1,
+        self.data_frame_mid_1 = tk.LabelFrame(center_segment, text="Attack 1", relief='groove', borderwidth=1,
                                               width=int(self.winfo_width() * 0.2))
         self.data_frame_mid_1.grid(row=0, column=1, sticky='nsew')
 
         # Центральная колонка 2
-        self.data_frame_mid_2 = tk.LabelFrame(center_segment, text="Атака 2", relief='groove', borderwidth=1,
+        self.data_frame_mid_2 = tk.LabelFrame(center_segment, text="Attack 2", relief='groove', borderwidth=1,
                                               width=int(self.winfo_width() * 0.2))
         self.data_frame_mid_2.grid(row=0, column=2, sticky='nsew')
 
         # Центральная колонка 2
-        self.data_frame_mid_3 = tk.LabelFrame(center_segment, text="Альтернативная атака", relief='groove',
+        self.data_frame_mid_3 = tk.LabelFrame(center_segment, text="Alternative attack", relief='groove',
                                               borderwidth=1, width=int(self.winfo_width() * 0.2))
         self.data_frame_mid_3.grid(row=0, column=3, sticky='nsew')
 
         # Правая колонка
-        self.data_frame_right = tk.LabelFrame(center_segment, text="Защита", relief='groove', borderwidth=1,
+        self.data_frame_right = tk.LabelFrame(center_segment, text="Resistances", relief='groove', borderwidth=1,
                                               width=int(self.winfo_width() * 0.2))
         self.data_frame_right.grid(row=0, column=4, sticky='nsew')
 
-        self.immunity_source_frame = tk.LabelFrame(self.data_frame_right, text="Источники", relief='groove',
+        self.immunity_source_frame = tk.LabelFrame(self.data_frame_right, text="Sources", relief='groove',
                                                    borderwidth=1)
         self.immunity_source_frame.grid(row=0, column=0, sticky='nsew')
         # add_source_btn = tk.Button(self.immunity_source_frame, text="Добавить защиту от источника")
         # add_source_btn.pack(side='top', padx=10)
 
-        self.immunity_class_frame = tk.LabelFrame(self.data_frame_right, text="Классы", relief='groove', borderwidth=1)
+        self.immunity_class_frame = tk.LabelFrame(self.data_frame_right, text="Classes", relief='groove', borderwidth=1)
         self.immunity_class_frame.grid(row=1, column=0, sticky='nsew')
         # add_class_btn = tk.Button(self.immunity_class_frame, text="Добавить защиту от класса")
         # add_class_btn.pack(side='top', padx=10)
@@ -109,15 +109,15 @@ class AppInterface(tk.Tk):
         bottom_segment = tk.Frame(main_frame, height=int(self.winfo_screenheight() * 0.1))
 
         # Кнопка "Применить изменения"
-        apply_btn = tk.Button(bottom_segment, text='Применить изменения', command=self.save_changes)
+        apply_btn = tk.Button(bottom_segment, text='Commit changes', command=self.save_changes)
         apply_btn.pack(side='left', padx=10)
 
         # Кнопка "Отменить изменения"
-        cancel_btn = tk.Button(bottom_segment, text='Отменить изменения', command=self.cancel_changes)
+        cancel_btn = tk.Button(bottom_segment, text='Cancel changes', command=self.cancel_changes)
         cancel_btn.pack(side='left', padx=10)
 
         # Кнопка "Откатить изменения"
-        rollback_btn = tk.Button(bottom_segment, text='Откатить изменения', command=self.rollback_changes)
+        rollback_btn = tk.Button(bottom_segment, text='Rollback changes', command=self.rollback_changes)
         rollback_btn.pack(side='left', padx=10)
 
         bottom_segment.pack(side=tk.BOTTOM, fill='x')
@@ -137,14 +137,14 @@ class AppInterface(tk.Tk):
     def select_directory(self):
         directory = self.directory_entry.get().strip()
         if not directory:
-            messagebox.showwarning('Внимание!', 'Необходимо указать путь к каталогу!')
+            messagebox.showwarning(title='WARNING', message='You have to enter the game\'s absolute path.')
             return
 
         result = self.db_manager.open_databases(directory)
         if result:
-            messagebox.showinfo('Успех!', 'Базы данных открыты успешно.')
+            messagebox.showinfo(title='INFO', message='DBF files opened successfully.')
         else:
-            messagebox.showerror('Ошибка!', 'Не удалось открыть базы данных.')
+            messagebox.showerror(title='ERROR', message='Could not open DBF files.')
 
     def destroy_widgets(self, frame):
         for widget in frame.winfo_children():
@@ -157,7 +157,7 @@ class AppInterface(tk.Tk):
 
         unit_id = self.unit_id_entry.get().strip()
         if not unit_id:
-            messagebox.showwarning('Внимание!', 'Необходимо ввести ID единицы!')
+            messagebox.showwarning(title='WARNING', message='You have to enter unit ID.')
             return
 
         record = self.db_manager.fetch_record_by_unit_id(unit_id)
@@ -203,7 +203,7 @@ class AppInterface(tk.Tk):
             self.display_immunities('SOURCE')
             self.display_immunities('CLASS')
         else:
-            messagebox.showerror('Ошибка!', f'Запись с UNIT_ID={unit_id} не найдена.')
+            messagebox.showerror(title='ERROR', message=f'The record UNIT_ID={unit_id} was not found.')
 
     def display_fields(self):
         for fields_frame in [self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3]:
@@ -298,7 +298,7 @@ class AppInterface(tk.Tk):
                         widgets[field] = widget
 
                         widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
-                delete_btn = tk.Button(self.immunity_frame, text='Удалить',
+                delete_btn = tk.Button(self.immunity_frame, text='Delete',
                                        command=lambda i=x: self.delete_immunity(records[i], immu_type))
                 delete_btn.grid(row=4)
 
@@ -327,7 +327,7 @@ class AppInterface(tk.Tk):
             if frame == self.data_frame_mid_3 and self.current_gattack_alt:
                 self.db_manager.update_record(self.current_gattack_alt, changes)
 
-        messagebox.showinfo('Успех!', 'Данные успешно сохранены!')
+        messagebox.showinfo(title='INFO', message='Data saved successfully.')
 
     def cancel_changes(self):
         self.display_fields()
@@ -358,9 +358,9 @@ class AppInterface(tk.Tk):
             tables_rollbacked += 1
 
         if tables_rollbacked > 0:
-            messagebox.showinfo('Успех!', 'Изменения отменены и запись восстановлена.')
+            messagebox.showinfo(title='INFO', message='Rollback completed successfully.')
         else:
-            messagebox.showinfo('Информирование', 'Нет изменений для отката.')
+            messagebox.showinfo(title='INFO', message='Nothing to rollback.')
 
     def delete_immunity(self, record, immu_type):
         text_list = []
