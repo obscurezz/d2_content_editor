@@ -1,5 +1,13 @@
 # d2_content_editor
 
+### To compile
+
+`nuitka --onefile  --enable-plugin=tk-inter --quiet main.py`
+
+### Download here
+
+https://github.com/obscurezz/d2_content_editor/releases/
+
 ## Features
 
 > Now we can add and delete unit resistances (still have to reload unit by its id to change the frames)
