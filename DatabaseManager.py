@@ -25,7 +25,6 @@ class DatabaseManager:
         self.LIMMUNE_TABLE = None
         self.immunity_options = {}
 
-
     def open_databases(self, directory):
         # Искать файлы в вложенном каталоге Globals
         globals_dir = os.path.join(directory, 'Globals')
@@ -172,11 +171,10 @@ class DatabaseManager:
                     value = None
                 setattr(record, key, value)
 
-    def restore_original_state(self, current_record, original_record):
-        # with current_record:
-        #     for field in current_record:
-        #         setattr(current_record, field.name, getattr(original_record, field.name))
-        pass
+    def restore_original_state(self, table, current_record, original_record):
+        with current_record:
+            for field in table.field_names:
+                setattr(current_record, field, getattr(original_record, field))
 
     def delete_record(self, record):
         dbf.delete(record)

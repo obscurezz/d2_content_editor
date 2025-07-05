@@ -35,7 +35,6 @@ class AppInterface(tk.Tk):
 
         # Верхний сегмент (примерно 10%) - панель ввода
         top_segment = tk.Frame(main_frame, height=int(self.winfo_screenheight() * 0.1))
-        top_segment.configure(background='lightgreen')
 
         # Директория
         directory_label = tk.Label(top_segment, text='Путь к родительскому каталогу:', font=('Arial', 12))
@@ -61,45 +60,53 @@ class AppInterface(tk.Tk):
 
         # Центральный сегмент (примерно 80%) - зона отображения данных
         center_segment = tk.Frame(main_frame)
-        center_segment.configure(background='lightblue')
 
         # Левая колонка
-        self.data_frame_left = tk.LabelFrame(center_segment, text="Общее", relief='groove', borderwidth=1)
+        self.data_frame_left = tk.LabelFrame(center_segment, text="Общее", relief='groove', borderwidth=1,
+                                             width=int(self.winfo_width() * 0.2))
         self.data_frame_left.grid(row=0, column=0, sticky='nsew')
 
         # Центральная колонка 1
-        self.data_frame_mid_1 = tk.LabelFrame(center_segment, text="Атака 1", relief='groove', borderwidth=1)
+        self.data_frame_mid_1 = tk.LabelFrame(center_segment, text="Атака 1", relief='groove', borderwidth=1,
+                                              width=int(self.winfo_width() * 0.2))
         self.data_frame_mid_1.grid(row=0, column=1, sticky='nsew')
 
         # Центральная колонка 2
-        self.data_frame_mid_2 = tk.LabelFrame(center_segment, text="Атака 2", relief='groove', borderwidth=1)
+        self.data_frame_mid_2 = tk.LabelFrame(center_segment, text="Атака 2", relief='groove', borderwidth=1,
+                                              width=int(self.winfo_width() * 0.2))
         self.data_frame_mid_2.grid(row=0, column=2, sticky='nsew')
 
         # Центральная колонка 2
-        self.data_frame_mid_3 = tk.LabelFrame(center_segment, text="Альтернативная атака", relief='groove', borderwidth=1)
+        self.data_frame_mid_3 = tk.LabelFrame(center_segment, text="Альтернативная атака", relief='groove',
+                                              borderwidth=1, width=int(self.winfo_width() * 0.2))
         self.data_frame_mid_3.grid(row=0, column=3, sticky='nsew')
 
         # Правая колонка
-        self.data_frame_right = tk.LabelFrame(center_segment, text="Защита", relief='groove', borderwidth=1)
+        self.data_frame_right = tk.LabelFrame(center_segment, text="Защита", relief='groove', borderwidth=1,
+                                              width=int(self.winfo_width() * 0.2))
         self.data_frame_right.grid(row=0, column=4, sticky='nsew')
 
-        self.immunity_source = tk.LabelFrame(self.data_frame_right, text="Источники", relief='groove', borderwidth=1)
-        self.immunity_source.grid(row=0, column=0, sticky='nsew')
+        self.immunity_source_frame = tk.LabelFrame(self.data_frame_right, text="Источники", relief='groove',
+                                                   borderwidth=1)
+        self.immunity_source_frame.grid(row=0, column=0, sticky='nsew')
+        # add_source_btn = tk.Button(self.immunity_source_frame, text="Добавить защиту от источника")
+        # add_source_btn.pack(side='top', padx=10)
 
-        self.immunity_class = tk.LabelFrame(self.data_frame_right, text="Классы", relief='groove', borderwidth=1)
-        self.immunity_class.grid(row=1, column=0, sticky='nsew')
+        self.immunity_class_frame = tk.LabelFrame(self.data_frame_right, text="Классы", relief='groove', borderwidth=1)
+        self.immunity_class_frame.grid(row=1, column=0, sticky='nsew')
+        # add_class_btn = tk.Button(self.immunity_class_frame, text="Добавить защиту от класса")
+        # add_class_btn.pack(side='top', padx=10)
 
         for row in range(2):
             self.data_frame_right.rowconfigure(row, weight=1)
 
         for col in range(5):
-            center_segment.columnconfigure(col, weight=1)
+            center_segment.columnconfigure(col, uniform="1", weight=1)
 
         center_segment.pack(expand=True, fill='both')
 
         # Нижний сегмент (примерно 10%) - панель управления
         bottom_segment = tk.Frame(main_frame, height=int(self.winfo_screenheight() * 0.1))
-        bottom_segment.configure(background='lightgray')
 
         # Кнопка "Применить изменения"
         apply_btn = tk.Button(bottom_segment, text='Применить изменения', command=self.save_changes)
@@ -115,6 +122,18 @@ class AppInterface(tk.Tk):
 
         bottom_segment.pack(side=tk.BOTTOM, fill='x')
 
+    def open_new_window(self, rec, immu_type):
+        new_window = tk.Toplevel(master=self)
+        new_window.title("Show me the record")
+        new_window.geometry("400x200")
+
+        text_list = []
+        for item in rec:
+            text_list.append(str(item))
+        text = ' '.join(text_list)
+
+        tk.Label(new_window, text=f'{immu_type} {text}').pack(pady=20)
+
     def select_directory(self):
         directory = self.directory_entry.get().strip()
         if not directory:
@@ -127,7 +146,15 @@ class AppInterface(tk.Tk):
         else:
             messagebox.showerror('Ошибка!', 'Не удалось открыть базы данных.')
 
+    def destroy_widgets(self, frame):
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+    def cleanup_widget_array(self, hash_table):
+        hash_table.clear()
+
     def load_and_show_record(self):
+
         unit_id = self.unit_id_entry.get().strip()
         if not unit_id:
             messagebox.showwarning('Внимание!', 'Необходимо ввести ID единицы!')
@@ -147,22 +174,30 @@ class AppInterface(tk.Tk):
                 second_attack_id) if second_attack_id != 'g000000000' else None
 
             alternate_attack_id = getattr(first_attack, 'ALT_ATTACK')
-            alternate_attack = self.db_manager.fetch_attack_by_att_id(alternate_attack_id) if alternate_attack_id != 'g000000000' else None
+            alternate_attack = self.db_manager.fetch_attack_by_att_id(
+                alternate_attack_id) if alternate_attack_id != 'g000000000' else None
 
-            if first_attack:
-                self.original_gattack_1 = self.current_gattack_1
-                self.current_gattack_1 = first_attack
+            # if first_attack:
+            self.original_gattack_1 = self.current_gattack_1
+            self.current_gattack_1 = first_attack
 
-            if second_attack:
-                self.original_gattack_2 = self.current_gattack_2
-                self.current_gattack_2 = second_attack
+            # if second_attack:
+            self.original_gattack_2 = self.current_gattack_2
+            self.current_gattack_2 = second_attack
 
-            if alternate_attack:
-                self.original_gattack_alt = self.current_gattack_alt
-                self.current_gattack_alt = alternate_attack
+            # if alternate_attack:
+            self.original_gattack_alt = self.current_gattack_alt
+            self.current_gattack_alt = alternate_attack
 
             self.source_immunities = self.db_manager.fetch_source_immunities_by_unit_id(unit_id)
             self.class_immunities = self.db_manager.fetch_class_immunities_by_unit_id(unit_id)
+
+            for t in (self.widgets, self.source_immunities_widgets, self.class_immunities_widgets):
+                self.cleanup_widget_array(t)
+
+            for f in (self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3,
+                      self.immunity_source_frame, self.immunity_class_frame):
+                self.destroy_widgets(f)
 
             self.display_fields()
             self.display_immunities('SOURCE')
@@ -171,7 +206,6 @@ class AppInterface(tk.Tk):
             messagebox.showerror('Ошибка!', f'Запись с UNIT_ID={unit_id} не найдена.')
 
     def display_fields(self):
-        self.widgets.clear()
         for fields_frame in [self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3]:
             self.widgets[fields_frame] = {}
             visible = []
@@ -216,26 +250,23 @@ class AppInterface(tk.Tk):
                         widget = tk.Checkbutton(fields_frame, variable=var)
                         self.widgets[fields_frame][field] = (widget, var)
                     elif widget_type['widget'] == 'Spinbox':
-                        widget = tk.Spinbox(fields_frame, from_=-999999, to=999999)
-                        widget.delete(0, tk.END)
-                        widget.insert(0, value or '')
-                        self.widgets[fields_frame][field] = widget
+                        var = tk.IntVar(value=value)
+                        widget = tk.Spinbox(fields_frame, from_=-999999, to=999999, textvariable=var)
+                        self.widgets[fields_frame][field] = (widget, var)
                     else:
-                        widget = tk.Entry(fields_frame)
-                        widget.insert(0, value or '')
-                        self.widgets[fields_frame][field] = widget
+                        var = tk.StringVar(value=value)
+                        widget = tk.Entry(fields_frame, textvariable=var)
+                        self.widgets[fields_frame][field] = (widget, var)
 
                     widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
 
     def display_immunities(self, immu_type):
         if immu_type == 'SOURCE':
-            self.source_immunities_widgets.clear()
-            frame = self.immunity_source
+            frame = self.immunity_source_frame
             records = self.source_immunities
             widgets = self.source_immunities_widgets
         elif immu_type == 'CLASS':
-            self.class_immunities_widgets.clear()
-            frame = self.immunity_class
+            frame = self.immunity_class_frame
             records = self.class_immunities
             widgets = self.class_immunities_widgets
         else:
@@ -243,7 +274,8 @@ class AppInterface(tk.Tk):
 
         if records:
             for x, record in enumerate(records):
-                self.immunity_frame = tk.LabelFrame(frame, text=f"{immu_type} {str(x+1)}", relief='groove', borderwidth=1)
+                self.immunity_frame = tk.LabelFrame(frame, text=f"{immu_type} {str(x + 1)}", relief='groove',
+                                                    borderwidth=1)
                 self.immunity_frame.grid(row=x, column=0, sticky='nsew')
                 for idx, field in enumerate(self.db_manager.GIMMU_TABLE.field_names):
                     if field == 'UNIT_ID':
@@ -266,8 +298,9 @@ class AppInterface(tk.Tk):
                         widgets[field] = widget
 
                         widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
-                # delete_btn = tk.Button(self.immunity_frame, text='Удалить', command=self.delete_immunity(record))
-                # delete_btn.grid(row=4)
+                delete_btn = tk.Button(self.immunity_frame, text='Удалить',
+                                       command=lambda i=x: self.delete_immunity(records[i], immu_type))
+                delete_btn.grid(row=4)
 
     def update_combobox_field(self, event=None):
         pass
@@ -304,16 +337,24 @@ class AppInterface(tk.Tk):
     def rollback_changes(self):
         tables_rollbacked = 0
         if self.current_gunit != self.original_gunit:
-            self.db_manager.restore_original_state(self.current_gunit, self.original_gunit)
+            self.db_manager.restore_original_state(table=self.db_manager.GUNITS_TABLE,
+                                                   current_record=self.current_gunit,
+                                                   original_record=self.original_gunit)
             tables_rollbacked += 1
         if self.current_gattack_1 != self.original_gattack_1:
-            self.db_manager.restore_original_state(self.current_gattack_1, self.original_gattack_1)
+            self.db_manager.restore_original_state(table=self.db_manager.GATTACKS_TABLE,
+                                                   current_record=self.current_gattack_1,
+                                                   original_record=self.original_gattack_1)
             tables_rollbacked += 1
         if self.current_gattack_2 != self.original_gattack_2:
-            self.db_manager.restore_original_state(self.current_gattack_2, self.original_gattack_2)
+            self.db_manager.restore_original_state(table=self.db_manager.GATTACKS_TABLE,
+                                                   current_record=self.current_gattack_2,
+                                                   original_record=self.original_gattack_2)
             tables_rollbacked += 1
         if self.current_gattack_alt != self.original_gattack_alt:
-            self.db_manager.restore_original_state(self.current_gattack_alt, self.original_gattack_alt)
+            self.db_manager.restore_original_state(table=self.db_manager.GATTACKS_TABLE,
+                                                   current_record=self.current_gattack_alt,
+                                                   original_record=self.original_gattack_alt)
             tables_rollbacked += 1
 
         if tables_rollbacked > 0:
@@ -321,5 +362,11 @@ class AppInterface(tk.Tk):
         else:
             messagebox.showinfo('Информирование', 'Нет изменений для отката.')
 
-    def delete_immunity(self, record):
-        return self.db_manager.delete_record(record)
+    def delete_immunity(self, record, immu_type):
+        text_list = []
+        for item in record:
+            text_list.append(str(item))
+        text = ' '.join(text_list)
+        self.db_manager.delete_record(record)
+
+        messagebox.showinfo(title='INFO', message=f'Immunity "{text}" with type {immu_type} has been deleted.')
