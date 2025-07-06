@@ -26,8 +26,11 @@ class DatabaseManager:
         self.LIMMUNE_TABLE = None
         self.immunity_options = {}
 
-    def open_databases(self, directory):
-        # Искать файлы в вложенном каталоге Globals
+    def open_databases(self, directory: str) -> bool:
+        """
+        :param directory: root directory for Dis2 game as string
+        :return: nothing, just open the table in their mods
+        """
         globals_dir = os.path.join(directory, 'Globals')
         if not os.path.exists(globals_dir):
             return False
@@ -132,39 +135,39 @@ class DatabaseManager:
 
         return True
 
-    def fetch_record_by_unit_id(self, unit_id):
+    def fetch_record_by_unit_id(self, unit_id: str) -> dbf.Record | None:
         for record in self.GUNITS_TABLE:
             if not is_deleted(record) and record.UNIT_ID == unit_id:
                 return record
         return None
 
-    def fetch_attack_by_att_id(self, att_id):
+    def fetch_attack_by_att_id(self, att_id: str) -> dbf.Record | None:
         for attack in self.GATTACKS_TABLE:
             if not is_deleted(attack) and attack.ATT_ID == att_id:
                 return attack
         return None
 
-    def fetch_upgrade_by_upg_id(self, upg_id):
+    def fetch_upgrade_by_upg_id(self, upg_id: str) -> dbf.Record | None:
         for upgrade in self.GDYNUPGR_TABLE:
             if not is_deleted(upgrade) and upgrade.UPGRADE_ID == upg_id:
                 return upgrade
         return None
 
-    def fetch_source_immunities_by_unit_id(self, unit_id):
+    def fetch_source_immunities_by_unit_id(self, unit_id: str) -> list[dbf.Record] | None:
         summary = []
         for record in self.GIMMU_TABLE:
             if not is_deleted(record) and record.UNIT_ID == unit_id:
                 summary.append(record)
         return summary
 
-    def fetch_class_immunities_by_unit_id(self, unit_id):
+    def fetch_class_immunities_by_unit_id(self, unit_id: str) -> list[dbf.Record] | None:
         summary = []
         for record in self.GIMMUC_TABLE:
             if not is_deleted(record) and record.UNIT_ID == unit_id:
                 summary.append(record)
         return summary
 
-    def get_catalog_options(self, catalog):
+    def get_catalog_options(self, catalog: str) -> dict:
         if catalog.lower() == 'subrace':
             return self.subrace_options
         if catalog.lower() == 'source':
@@ -177,22 +180,22 @@ class DatabaseManager:
             return self.immunity_options
         return {}
 
-    def get_catalog_id(self, catalog, text):
+    def get_catalog_id(self, catalog: str, text: str) -> int | None:
         return next((key for key, val in self.get_catalog_options(catalog).items() if val == text), None)
 
-    def update_record(self, record, changes):
+    def update_record(self, record: dbf.Record, changes: dict):
         with record:
             for key, value in changes.items():
                 if value == '':
                     value = None
                 setattr(record, key, value)
 
-    def restore_original_state(self, table, current_record, original_record):
+    def restore_original_state(self, table: dbf.Table, current_record: dbf.Record, original_record: dbf.Record):
         with current_record:
             for field in table.field_names:
                 setattr(current_record, field, getattr(original_record, field))
 
-    def delete_record(self, record):
+    def delete_record(self, record: dbf.Record):
         dbf.delete(record)
 
     def add_record(self, table: dbf.Table, data: dict):

@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter.ttk import Combobox
+
+import dbf
+
 import DatabaseManager
 import settings
 
@@ -160,7 +163,7 @@ class AppInterface(tk.Tk):
 
         bottom_segment.pack(side=tk.BOTTOM, fill='x')
 
-    def open_add_window(self, immu_type):
+    def open_add_window(self, immu_type: str):
         unit_id = self.unit_id_entry.get().strip()
 
         new_window = tk.Toplevel(master=self)
@@ -207,11 +210,11 @@ class AppInterface(tk.Tk):
         else:
             messagebox.showerror(title='ERROR', message='Could not open DBF files.')
 
-    def destroy_widgets(self, frame):
+    def destroy_widgets(self, frame: tk.Frame | tk.LabelFrame):
         for widget in frame.winfo_children():
             widget.destroy()
 
-    def cleanup_widget_array(self, hash_table):
+    def cleanup_widget_array(self, hash_table: dict):
         hash_table.clear()
 
     def load_and_show_record(self):
@@ -332,7 +335,7 @@ class AppInterface(tk.Tk):
 
                     widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
 
-    def display_immunities(self, immu_type):
+    def display_immunities(self, immu_type: str):
         if immu_type == 'SOURCE':
             frame = self.immunity_source_frame
             records = self.source_immunities
@@ -371,7 +374,7 @@ class AppInterface(tk.Tk):
                                        command=lambda i=x: self.delete_immunity(records[i], immu_type))
                 delete_btn.grid(row=4)
 
-    def display_upgrades(self, upgrade):
+    def display_upgrades(self, upgrade: str):
         table = self.db_manager.GDYNUPGR_TABLE
         if upgrade == 'UPGRADE1':
             frame = self.first_upgrade_frame
@@ -486,7 +489,7 @@ class AppInterface(tk.Tk):
         else:
             messagebox.showinfo(title='INFO', message='Nothing to rollback.')
 
-    def delete_immunity(self, record, immu_type):
+    def delete_immunity(self, record: dbf.Record, immu_type: str):
         self.db_manager.delete_record(record)
 
         text_list = []
@@ -495,7 +498,7 @@ class AppInterface(tk.Tk):
         text = ' '.join(text_list)
         messagebox.showinfo(title='INFO', message=f'Immunity "{text}" with type {immu_type} has been deleted.')
 
-    def add_immunity(self, data, immu_type):
+    def add_immunity(self, data: dict, immu_type: str):
         table = None
         if immu_type == 'SOURCE':
             table = self.db_manager.GIMMU_TABLE
