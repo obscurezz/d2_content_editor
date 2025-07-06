@@ -54,6 +54,25 @@ VISIBLE_FIELDS_GATTACKS = [
     'CRIT_POWER'
 ]
 
+VISIBLE_FIELDS_GDYNUPGR =[
+    'UPGRADE_ID',
+    'ENROLL_C',
+    'HIT_POINT',
+    'ARMOR',
+    'REGEN',
+    'REVIVE_C',
+    'HEAL_C',
+    'TRAINING_C',
+    'XP_KILLED',
+    'XP_NEXT',
+    'MOVE',
+    'NEGOTIATE',
+    'DAMAGE',
+    'HEAL',
+    'INITIATIVE',
+    'POWER'
+]
+
 FIELD_TYPES = {
     67: {'widget': 'Entry'},     # C - Character (строка)
     78: {'widget': 'Spinbox'},  # N - Numeric (число)

@@ -9,6 +9,7 @@ class DatabaseManager:
         self.GATTACKS_TABLE = None
         self.GIMMU_TABLE = None
         self.GIMMUC_TABLE = None
+        self.GDYNUPGR_TABLE = None
 
         self.LSUBRACE_TABLE = None
         self.subrace_options = {}
@@ -35,6 +36,7 @@ class DatabaseManager:
         gattacks_path = None
         gimmu_path = None
         gimmuc_path = None
+        gdynupgr_path = None
         lsubrace_path = None
         latts_path = None
         lattc_path = None
@@ -50,6 +52,8 @@ class DatabaseManager:
                 gimmu_path = os.path.join(globals_dir, filename)
             elif filename.lower() == 'gimmuc.dbf':
                 gimmuc_path = os.path.join(globals_dir, filename)
+            elif filename.lower() == 'gdynupgr.dbf':
+                gdynupgr_path = os.path.join(globals_dir, filename)
             elif filename.lower() == 'lsubrace.dbf':
                 lsubrace_path = os.path.join(globals_dir, filename)
             elif filename.lower() == 'latts.dbf':
@@ -82,6 +86,12 @@ class DatabaseManager:
         if gimmuc_path:
             self.GIMMUC_TABLE = dbf.Table(gimmuc_path)
             self.GIMMUC_TABLE.open(mode=dbf.READ_WRITE)
+        else:
+            return False
+
+        if gimmuc_path:
+            self.GDYNUPGR_TABLE = dbf.Table(gdynupgr_path)
+            self.GDYNUPGR_TABLE.open(mode=dbf.READ_WRITE)
         else:
             return False
 
@@ -134,6 +144,12 @@ class DatabaseManager:
                 return attack
         return None
 
+    def fetch_upgrade_by_upg_id(self, upg_id):
+        for upgrade in self.GDYNUPGR_TABLE:
+            if not is_deleted(upgrade) and upgrade.UPGRADE_ID == upg_id:
+                return upgrade
+        return None
+
     def fetch_source_immunities_by_unit_id(self, unit_id):
         summary = []
         for record in self.GIMMU_TABLE:
@@ -179,5 +195,5 @@ class DatabaseManager:
     def delete_record(self, record):
         dbf.delete(record)
 
-    def add_record(self, table: dbf.Table, data: tuple):
+    def add_record(self, table: dbf.Table, data: dict):
         table.append(data=data)
