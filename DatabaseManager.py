@@ -55,16 +55,16 @@ class DatabaseManager:
         return True
 
     @staticmethod
-    def open_database(directory: str, db_name: str) -> dbf.Table:
+    def open_database(directory: str, db_name: str) -> dbf.Table | None:
         for filename in os.listdir(directory):
             if filename.lower() == db_name.lower():
                 filepath = os.path.join(directory, filename)
+                if db_name.lower().startswith('g'):
+                    return dbf.Table(filepath).open(dbf.READ_WRITE)
+                if db_name.lower().startswith('l'):
+                    return dbf.Table(filepath).open(dbf.READ_ONLY)
+        return None
 
-        if filepath:
-            if db_name.lower().startswith('g'):
-                return dbf.Table(filepath).open(dbf.READ_WRITE)
-            if db_name.lower().startswith('l'):
-                return dbf.Table(filepath).open(dbf.READ_ONLY)
 
     @staticmethod
     def restore_original_state(table: dbf.Table, current_record: dbf.Record, original_record: dbf.Record):
