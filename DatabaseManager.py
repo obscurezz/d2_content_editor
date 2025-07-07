@@ -35,105 +35,58 @@ class DatabaseManager:
         if not os.path.exists(globals_dir):
             return False
 
-        gunits_path = None
-        gattacks_path = None
-        gimmu_path = None
-        gimmuc_path = None
-        gdynupgr_path = None
-        lsubrace_path = None
-        latts_path = None
-        lattc_path = None
-        lattr_path = None
-        limmune_path = None
+        self.GUNITS_TABLE = self.open_database(globals_dir, 'gunits.dbf')
+        self.GATTACKS_TABLE = self.open_database(globals_dir, 'gattacks.dbf')
+        self.GIMMU_TABLE = self.open_database(globals_dir, 'gimmu.dbf')
+        self.GIMMUC_TABLE = self.open_database(globals_dir, 'gimmuc.dbf')
+        self.GDYNUPGR_TABLE = self.open_database(globals_dir, 'gdynupgr.dbf')
+        self.LSUBRACE_TABLE = self.open_database(globals_dir, 'lsubrace.dbf')
+        self.LATTS_TABLE = self.open_database(globals_dir, 'latts.dbf')
+        self.LATTC_TABLE = self.open_database(globals_dir, 'lattc.dbf')
+        self.LATTR_TABLE = self.open_database(globals_dir, 'lattr.dbf')
+        self.LIMMUNE_TABLE = self.open_database(globals_dir, 'limmune.dbf')
 
-        for filename in os.listdir(globals_dir):
-            if filename.lower() == 'gunits.dbf':
-                gunits_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'gattacks.dbf':
-                gattacks_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'gimmu.dbf':
-                gimmu_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'gimmuc.dbf':
-                gimmuc_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'gdynupgr.dbf':
-                gdynupgr_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'lsubrace.dbf':
-                lsubrace_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'latts.dbf':
-                latts_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'lattc.dbf':
-                lattc_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'lattr.dbf':
-                lattr_path = os.path.join(globals_dir, filename)
-            elif filename.lower() == 'limmune.dbf':
-                limmune_path = os.path.join(globals_dir, filename)
-
-        if gunits_path:
-            self.GUNITS_TABLE = dbf.Table(gunits_path)
-            self.GUNITS_TABLE.open(mode=dbf.READ_WRITE)
-        else:
-            return False
-
-        if gattacks_path:
-            self.GATTACKS_TABLE = dbf.Table(gattacks_path)
-            self.GATTACKS_TABLE.open(mode=dbf.READ_WRITE)
-        else:
-            return False
-
-        if gimmu_path:
-            self.GIMMU_TABLE = dbf.Table(gimmu_path)
-            self.GIMMU_TABLE.open(mode=dbf.READ_WRITE)
-        else:
-            return False
-
-        if gimmuc_path:
-            self.GIMMUC_TABLE = dbf.Table(gimmuc_path)
-            self.GIMMUC_TABLE.open(mode=dbf.READ_WRITE)
-        else:
-            return False
-
-        if gimmuc_path:
-            self.GDYNUPGR_TABLE = dbf.Table(gdynupgr_path)
-            self.GDYNUPGR_TABLE.open(mode=dbf.READ_WRITE)
-        else:
-            return False
-
-        if lsubrace_path:
-            self.LSUBRACE_TABLE = dbf.Table(lsubrace_path)
-            self.LSUBRACE_TABLE.open(mode=dbf.READ_ONLY)
-            self.subrace_options = {rec.ID: rec.TEXT for rec in self.LSUBRACE_TABLE if not is_deleted(rec)}
-        else:
-            return False
-
-        if latts_path:
-            self.LATTS_TABLE = dbf.Table(latts_path)
-            self.LATTS_TABLE.open(mode=dbf.READ_ONLY)
-            self.attack_source_options = {rec.ID: rec.TEXT for rec in self.LATTS_TABLE if not is_deleted(rec)}
-        else:
-            return False
-
-        if lattc_path:
-            self.LATTC_TABLE = dbf.Table(lattc_path)
-            self.LATTC_TABLE.open(mode=dbf.READ_ONLY)
-            self.attack_class_options = {rec.ID: rec.TEXT for rec in self.LATTC_TABLE if not is_deleted(rec)}
-        else:
-            return False
-
-        if lattr_path:
-            self.LATTR_TABLE = dbf.Table(lattr_path)
-            self.LATTR_TABLE.open(mode=dbf.READ_ONLY)
-            self.attack_reach_options = {rec.ID: rec.TEXT for rec in self.LATTR_TABLE if not is_deleted(rec)}
-        else:
-            return False
-
-        if limmune_path:
-            self.LIMMUNE_TABLE = dbf.Table(limmune_path)
-            self.LIMMUNE_TABLE.open(mode=dbf.READ_ONLY)
-            self.immunity_options = {rec.ID: rec.TEXT for rec in self.LIMMUNE_TABLE if not is_deleted(rec)}
-        else:
-            return False
+        self.subrace_options = {rec.ID: rec.TEXT for rec in self.LSUBRACE_TABLE if not is_deleted(rec)}
+        self.attack_source_options = {rec.ID: rec.TEXT for rec in self.LATTS_TABLE if not is_deleted(rec)}
+        self.attack_class_options = {rec.ID: rec.TEXT for rec in self.LATTC_TABLE if not is_deleted(rec)}
+        self.attack_reach_options = {rec.ID: rec.TEXT for rec in self.LATTR_TABLE if not is_deleted(rec)}
+        self.immunity_options = {rec.ID: rec.TEXT for rec in self.LIMMUNE_TABLE if not is_deleted(rec)}
 
         return True
+
+    @staticmethod
+    def open_database(directory: str, db_name: str) -> dbf.Table:
+        for filename in os.listdir(directory):
+            if filename.lower() == db_name.lower():
+                filepath = os.path.join(directory, filename)
+
+        if filepath:
+            if db_name.lower().startswith('g'):
+                return dbf.Table(filepath).open(dbf.READ_WRITE)
+            if db_name.lower().startswith('l'):
+                return dbf.Table(filepath).open(dbf.READ_ONLY)
+
+    @staticmethod
+    def restore_original_state(table: dbf.Table, current_record: dbf.Record, original_record: dbf.Record):
+        with current_record:
+            for field in table.field_names:
+                setattr(current_record, field, getattr(original_record, field))
+
+    @staticmethod
+    def delete_record(record: dbf.Record):
+        dbf.delete(record)
+
+    @staticmethod
+    def add_record(table: dbf.Table, data: dict):
+        table.append(data=data)
+
+    @staticmethod
+    def update_record(record: dbf.Record, changes: dict):
+        with record:
+            for key, value in changes.items():
+                if value == '':
+                    value = None
+                setattr(record, key, value)
 
     def fetch_record_by_unit_id(self, unit_id: str) -> dbf.Record | None:
         for record in self.GUNITS_TABLE:
@@ -182,21 +135,3 @@ class DatabaseManager:
 
     def get_catalog_id(self, catalog: str, text: str) -> int | None:
         return next((key for key, val in self.get_catalog_options(catalog).items() if val == text), None)
-
-    def update_record(self, record: dbf.Record, changes: dict):
-        with record:
-            for key, value in changes.items():
-                if value == '':
-                    value = None
-                setattr(record, key, value)
-
-    def restore_original_state(self, table: dbf.Table, current_record: dbf.Record, original_record: dbf.Record):
-        with current_record:
-            for field in table.field_names:
-                setattr(current_record, field, getattr(original_record, field))
-
-    def delete_record(self, record: dbf.Record):
-        dbf.delete(record)
-
-    def add_record(self, table: dbf.Table, data: dict):
-        table.append(data=data)

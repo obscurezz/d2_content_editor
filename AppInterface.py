@@ -163,6 +163,15 @@ class AppInterface(tk.Tk):
 
         bottom_segment.pack(side=tk.BOTTOM, fill='x')
 
+    @staticmethod
+    def destroy_widgets(frame: tk.Frame | tk.LabelFrame):
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+    @staticmethod
+    def cleanup_widget_array(hash_table: dict):
+        hash_table.clear()
+
     def open_add_window(self, immu_type: str):
         unit_id = self.unit_id_entry.get().strip()
 
@@ -209,13 +218,6 @@ class AppInterface(tk.Tk):
             messagebox.showinfo(title='INFO', message='DBF files opened successfully.')
         else:
             messagebox.showerror(title='ERROR', message='Could not open DBF files.')
-
-    def destroy_widgets(self, frame: tk.Frame | tk.LabelFrame):
-        for widget in frame.winfo_children():
-            widget.destroy()
-
-    def cleanup_widget_array(self, hash_table: dict):
-        hash_table.clear()
 
     def load_and_show_record(self):
 
@@ -331,6 +333,8 @@ class AppInterface(tk.Tk):
                     else:
                         var = tk.StringVar(value=value)
                         widget = tk.Entry(fields_frame, textvariable=var)
+                        if idx == 0:
+                            widget.configure(state='readonly')
                         self.widgets[fields_frame][field] = (widget, var)
 
                     widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
@@ -409,6 +413,8 @@ class AppInterface(tk.Tk):
                 else:
                     var = tk.StringVar(value=value)
                     widget = tk.Entry(frame, textvariable=var)
+                    if idx == 0:
+                        widget.configure(state='readonly')
                     widgets[field] = (widget, var)
 
                 widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
