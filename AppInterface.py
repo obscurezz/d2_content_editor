@@ -283,7 +283,8 @@ class AppInterface(tk.Tk):
             messagebox.showerror(title='ERROR', message=f'The record UNIT_ID={unit_id} was not found.')
 
     def display_fields(self):
-        for fields_frame in [self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3]:
+        for fields_frame in [self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3,
+                             self.first_upgrade_frame, self.second_upgrade_frame]:
             self.widgets[fields_frame] = {}
             visible = []
             record = None
@@ -304,6 +305,14 @@ class AppInterface(tk.Tk):
                 visible = settings.VISIBLE_FIELDS_GATTACKS
                 record = self.current_gattack_alt
                 table = self.db_manager.GATTACKS_TABLE
+            if fields_frame == self.first_upgrade_frame:
+                visible = settings.VISIBLE_FIELDS_GDYNUPGR
+                record = self.current_upgrade_1
+                table = self.db_manager.GDYNUPGR_TABLE
+            elif fields_frame == self.second_upgrade_frame:
+                visible = settings.VISIBLE_FIELDS_GDYNUPGR
+                record = self.current_upgrade_2
+                table = self.db_manager.GDYNUPGR_TABLE
 
             if record:
                 for idx, field in enumerate(visible):
@@ -378,47 +387,6 @@ class AppInterface(tk.Tk):
                                        command=lambda i=x: self.delete_immunity(records[i], immu_type))
                 delete_btn.grid(row=4)
 
-    def display_upgrades(self, upgrade: str):
-        table = self.db_manager.GDYNUPGR_TABLE
-        if upgrade == 'UPGRADE1':
-            frame = self.first_upgrade_frame
-            widgets = self.first_upgrade_widgets
-            record = self.current_upgrade_1
-        elif upgrade == 'UPGRADE2':
-            frame = self.second_upgrade_frame
-            widgets = self.second_upgrade_widgets
-            record = self.current_upgrade_2
-        else:
-            return
-
-        if record:
-            for idx, field in enumerate(settings.VISIBLE_FIELDS_GDYNUPGR):
-                label_text = field + ': '
-                field_code = table.field_info(field)[0]
-                widget_type = settings.FIELD_TYPES.get(field_code, {'widget': 'Entry'})
-
-                label = tk.Label(frame, text=label_text)
-                label.grid(row=idx, column=0, sticky='e')
-
-                value = getattr(record, field)
-
-                if widget_type['widget'] == 'Checkbutton':
-                    var = tk.BooleanVar(value=value)
-                    widget = tk.Checkbutton(frame, variable=var)
-                    widgets[field] = (widget, var)
-                elif widget_type['widget'] == 'Spinbox':
-                    var = tk.IntVar(value=value)
-                    widget = tk.Spinbox(frame, from_=-999999, to=999999, textvariable=var)
-                    widgets[field] = (widget, var)
-                else:
-                    var = tk.StringVar(value=value)
-                    widget = tk.Entry(frame, textvariable=var)
-                    if idx == 0:
-                        widget.configure(state='readonly')
-                    widgets[field] = (widget, var)
-
-                widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
-
     def update_combobox_field(self, event=None):
         pass
 
@@ -443,27 +411,15 @@ class AppInterface(tk.Tk):
                 self.db_manager.update_record(self.current_gattack_2, changes)
             if frame == self.data_frame_mid_3 and self.current_gattack_alt:
                 self.db_manager.update_record(self.current_gattack_alt, changes)
-
-        for u in [self.first_upgrade_widgets, self.second_upgrade_widgets]:
-            changes = {}
-            for field_name, widget in u.items():
-                if isinstance(widget, tuple):
-                    _, bool_var = widget
-                    changes[field_name] = bool_var.get()
-                else:
-                    changes[field_name] = widget.get()
-
-            if u == self.first_upgrade_widgets and self.current_upgrade_1:
+            if frame == self.first_upgrade_frame and self.current_upgrade_1:
                 self.db_manager.update_record(self.current_upgrade_1, changes)
-            if u == self.second_upgrade_frame and self.current_upgrade_2:
+            if frame == self.second_upgrade_frame and self.current_upgrade_2:
                 self.db_manager.update_record(self.current_upgrade_2, changes)
 
         messagebox.showinfo(title='INFO', message='Data saved successfully.')
 
     def cancel_changes(self):
         self.display_fields()
-        self.display_upgrades('UPGRADE1')
-        self.display_upgrades('UPGRADE2')
         self.display_immunities('SOURCE')
         self.display_immunities('CLASS')
 
