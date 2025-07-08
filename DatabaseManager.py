@@ -45,6 +45,8 @@ class DatabaseManager:
         self.LATTC_TABLE = self.open_database(globals_dir, 'lattc.dbf')
         self.LATTR_TABLE = self.open_database(globals_dir, 'lattr.dbf')
         self.LIMMUNE_TABLE = self.open_database(globals_dir, 'limmune.dbf')
+        self.GMODIF_TABLE = self.open_database(globals_dir, 'gmodif.dbf')
+        self.GUMODIF_TABLE = self.open_database(globals_dir, 'gumodif.dbf')
 
         self.subrace_options = {rec.ID: rec.TEXT for rec in self.LSUBRACE_TABLE if not is_deleted(rec)}
         self.attack_source_options = {rec.ID: rec.TEXT for rec in self.LATTS_TABLE if not is_deleted(rec)}
@@ -64,7 +66,6 @@ class DatabaseManager:
                 if db_name.lower().startswith('l'):
                     return dbf.Table(filepath).open(dbf.READ_ONLY)
         return None
-
 
     @staticmethod
     def restore_original_state(table: dbf.Table, current_record: dbf.Record, original_record: dbf.Record):
@@ -88,36 +89,16 @@ class DatabaseManager:
                     value = None
                 setattr(record, key, value)
 
-    def fetch_record_by_unit_id(self, unit_id: str) -> dbf.Record | None:
-        for record in self.GUNITS_TABLE:
-            if not is_deleted(record) and record.UNIT_ID == unit_id:
-                return record
-        return None
+    @staticmethod
+    def get_record_by_id(record_id: str, table: dbf.Table, id_column: str) -> dbf.Record | list[dbf.Record] | None:
+        summary: list = []
 
-    def fetch_attack_by_att_id(self, att_id: str) -> dbf.Record | None:
-        for attack in self.GATTACKS_TABLE:
-            if not is_deleted(attack) and attack.ATT_ID == att_id:
-                return attack
-        return None
-
-    def fetch_upgrade_by_upg_id(self, upg_id: str) -> dbf.Record | None:
-        for upgrade in self.GDYNUPGR_TABLE:
-            if not is_deleted(upgrade) and upgrade.UPGRADE_ID == upg_id:
-                return upgrade
-        return None
-
-    def fetch_source_immunities_by_unit_id(self, unit_id: str) -> list[dbf.Record] | None:
-        summary = []
-        for record in self.GIMMU_TABLE:
-            if not is_deleted(record) and record.UNIT_ID == unit_id:
+        for record in table:
+            if not is_deleted(record) and getattr(record, id_column) == record_id:
                 summary.append(record)
-        return summary
 
-    def fetch_class_immunities_by_unit_id(self, unit_id: str) -> list[dbf.Record] | None:
-        summary = []
-        for record in self.GIMMUC_TABLE:
-            if not is_deleted(record) and record.UNIT_ID == unit_id:
-                summary.append(record)
+        if len(summary) == 1:
+            return summary[0]
         return summary
 
     def get_catalog_options(self, catalog: str) -> dict:
@@ -135,3 +116,9 @@ class DatabaseManager:
 
     def get_catalog_id(self, catalog: str, text: str) -> int | None:
         return next((key for key, val in self.get_catalog_options(catalog).items() if val == text), None)
+
+    def close_tables(self):
+        for t in self.__dict__:
+            if isinstance(getattr(self, t), dbf.Table):
+                calling = getattr(t, 'close')
+                calling()

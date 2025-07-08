@@ -84,23 +84,23 @@ class AppInterface(tk.Tk):
         center_segment = tk.Frame(main_frame)
 
         self.data_frame_left = tk.LabelFrame(center_segment, text="Main", relief='groove', borderwidth=1,
-                                             width=int(self.winfo_width() * 0.166))
+                                             width=int(self.winfo_width() * 0.14286))
         self.data_frame_left.grid(row=0, column=0, sticky='nsew')
 
         self.data_frame_mid_1 = tk.LabelFrame(center_segment, text="Attack 1", relief='groove', borderwidth=1,
-                                              width=int(self.winfo_width() * 0.166))
+                                              width=int(self.winfo_width() * 0.14286))
         self.data_frame_mid_1.grid(row=0, column=1, sticky='nsew')
 
         self.data_frame_mid_2 = tk.LabelFrame(center_segment, text="Attack 2", relief='groove', borderwidth=1,
-                                              width=int(self.winfo_width() * 0.166))
+                                              width=int(self.winfo_width() * 0.14286))
         self.data_frame_mid_2.grid(row=0, column=2, sticky='nsew')
 
         self.data_frame_mid_3 = tk.LabelFrame(center_segment, text="Alternative attack", relief='groove',
-                                              borderwidth=1, width=int(self.winfo_width() * 0.166))
+                                              borderwidth=1, width=int(self.winfo_width() * 0.14286))
         self.data_frame_mid_3.grid(row=0, column=3, sticky='nsew')
 
         self.data_frame_mid_4 = tk.LabelFrame(center_segment, text="Upgrades", relief='groove',
-                                              borderwidth=1, width=int(self.winfo_width() * 0.166))
+                                              borderwidth=1, width=int(self.winfo_width() * 0.14286))
         self.data_frame_mid_4.grid(row=0, column=4, sticky='nsew')
 
         """
@@ -115,7 +115,7 @@ class AppInterface(tk.Tk):
         self.second_upgrade_frame.grid(row=1, sticky='nsew', padx=10, pady=10)
 
         self.data_frame_right = tk.LabelFrame(center_segment, text="Resistances", relief='groove', borderwidth=1,
-                                              width=int(self.winfo_width() * 0.166))
+                                              width=int(self.winfo_width() * 0.14286))
         self.data_frame_right.grid(row=0, column=5, sticky='nsew')
 
         """
@@ -138,6 +138,10 @@ class AppInterface(tk.Tk):
 
         for row in (2, 3):
             self.data_frame_right.rowconfigure(row, weight=1)
+
+        # self.modifiers_frame = tk.LabelFrame(center_segment, text="Modifiers", relief='groove', borderwidth=1,
+        #                                      width=int(self.winfo_width() * 0.14286))
+        # self.modifiers_frame.grid(row=0, column=6, sticky='nsew')
 
         for col in range(6):
             center_segment.columnconfigure(col, uniform="1", weight=1)
@@ -226,7 +230,7 @@ class AppInterface(tk.Tk):
             messagebox.showwarning(title='WARNING', message='You have to enter unit ID.')
             return
 
-        record = self.db_manager.fetch_record_by_unit_id(unit_id)
+        record = self.db_manager.get_record_by_id(unit_id, self.db_manager.GUNITS_TABLE, 'UNIT_ID')
         if record:
             self.original_gunit = self.current_gunit
             self.current_gunit = record
@@ -234,19 +238,23 @@ class AppInterface(tk.Tk):
             first_attack_id = getattr(record, 'ATTACK_ID')
             second_attack_id = getattr(record, 'ATTACK2_ID')
 
-            first_attack = self.db_manager.fetch_attack_by_att_id(first_attack_id)
-            second_attack = self.db_manager.fetch_attack_by_att_id(
-                second_attack_id) if second_attack_id != 'g000000000' else None
+            first_attack = self.db_manager.get_record_by_id(first_attack_id, self.db_manager.GATTACKS_TABLE, 'ATT_ID')
+            second_attack = self.db_manager.get_record_by_id(
+                second_attack_id, self.db_manager.GATTACKS_TABLE,
+                'ATT_ID') if second_attack_id != 'g000000000' else None
 
             alternate_attack_id = getattr(first_attack, 'ALT_ATTACK')
-            alternate_attack = self.db_manager.fetch_attack_by_att_id(
-                alternate_attack_id) if alternate_attack_id != 'g000000000' else None
+            alternate_attack = self.db_manager.get_record_by_id(
+                alternate_attack_id, self.db_manager.GATTACKS_TABLE,
+                'ATT_ID') if alternate_attack_id != 'g000000000' else None
 
             first_upgrade_id = getattr(record, 'DYN_UPG1')
             second_upgrade_id = getattr(record, 'DYN_UPG2')
 
-            first_upgrade = self.db_manager.fetch_upgrade_by_upg_id(first_upgrade_id)
-            second_upgrade = self.db_manager.fetch_upgrade_by_upg_id(second_upgrade_id)
+            first_upgrade = self.db_manager.get_record_by_id(first_upgrade_id, self.db_manager.GDYNUPGR_TABLE,
+                                                             'UPGRADE_ID')
+            second_upgrade = self.db_manager.get_record_by_id(second_upgrade_id, self.db_manager.GDYNUPGR_TABLE,
+                                                              'UPGRADE_ID')
 
             self.original_upgrade_1 = self.current_upgrade_1
             self.current_upgrade_1 = first_upgrade
@@ -266,8 +274,8 @@ class AppInterface(tk.Tk):
             self.original_gattack_alt = self.current_gattack_alt
             self.current_gattack_alt = alternate_attack
 
-            self.source_immunities = self.db_manager.fetch_source_immunities_by_unit_id(unit_id)
-            self.class_immunities = self.db_manager.fetch_class_immunities_by_unit_id(unit_id)
+            self.source_immunities = self.db_manager.get_record_by_id(unit_id, self.db_manager.GIMMU_TABLE, 'UNIT_ID')
+            self.class_immunities = self.db_manager.get_record_by_id(unit_id, self.db_manager.GIMMUC_TABLE, 'UNIT_ID')
 
             for t in (self.widgets, self.first_upgrade_widgets, self.second_upgrade_widgets,
                       self.source_immunities_widgets, self.class_immunities_widgets):
@@ -359,6 +367,9 @@ class AppInterface(tk.Tk):
             widgets = self.class_immunities_widgets
         else:
             return
+
+        if not isinstance(records, list):
+            records = [records]
 
         if records:
             for x, record in enumerate(records):
