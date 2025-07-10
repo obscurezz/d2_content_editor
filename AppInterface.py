@@ -3,6 +3,7 @@ from tkinter import messagebox
 from tkinter.ttk import Combobox
 
 import dbf
+import os
 
 import DatabaseManager
 import settings
@@ -40,6 +41,9 @@ class AppInterface(tk.Tk):
         self.class_immunities_widgets = {}
         self.source_immunities = None
         self.class_immunities = None
+
+        self.modifiers_widgets = {}
+        self.modifiers = None
 
         self.db_manager = DatabaseManager.DatabaseManager()
 
@@ -139,11 +143,11 @@ class AppInterface(tk.Tk):
         for row in (2, 3):
             self.data_frame_right.rowconfigure(row, weight=1)
 
-        # self.modifiers_frame = tk.LabelFrame(center_segment, text="Modifiers", relief='groove', borderwidth=1,
-        #                                      width=int(self.winfo_width() * 0.14286))
-        # self.modifiers_frame.grid(row=0, column=6, sticky='nsew')
+        self.modifiers_frame = tk.LabelFrame(center_segment, text="Modifiers", relief='groove', borderwidth=1,
+                                             width=int(self.winfo_width() * 0.14286))
+        self.modifiers_frame.grid(row=0, column=6, sticky='nsew')
 
-        for col in range(6):
+        for col in range(7):
             center_segment.columnconfigure(col, uniform="1", weight=1)
 
         center_segment.pack(expand=True, fill='both')
@@ -277,13 +281,15 @@ class AppInterface(tk.Tk):
             self.source_immunities = self.db_manager.get_record_by_id(unit_id, self.db_manager.GIMMU_TABLE, 'UNIT_ID')
             self.class_immunities = self.db_manager.get_record_by_id(unit_id, self.db_manager.GIMMUC_TABLE, 'UNIT_ID')
 
+            self.modifiers = self.db_manager.get_record_by_id(unit_id, self.db_manager.GUMODIF_TABLE, 'UNIT_ID')
+
             for t in (self.widgets, self.first_upgrade_widgets, self.second_upgrade_widgets,
-                      self.source_immunities_widgets, self.class_immunities_widgets):
+                      self.source_immunities_widgets, self.class_immunities_widgets, self.modifiers_widgets):
                 self.cleanup_widget_array(t)
 
             for f in (self.data_frame_left, self.data_frame_mid_1, self.data_frame_mid_2, self.data_frame_mid_3,
                       self.first_upgrade_frame, self.second_upgrade_frame, self.immunity_source_frame,
-                      self.immunity_class_frame):
+                      self.immunity_class_frame, self.modifiers_frame):
                 self.destroy_widgets(f)
 
             self.cancel_changes()
@@ -368,10 +374,9 @@ class AppInterface(tk.Tk):
         else:
             return
 
-        if not isinstance(records, list):
-            records = [records]
-
         if records:
+            if not isinstance(records, list):
+                records = [records]
             for x, record in enumerate(records):
                 self.immunity_frame = tk.LabelFrame(frame, text=f"{immu_type} {str(x + 1)}", relief='groove',
                                                     borderwidth=1)
@@ -398,8 +403,50 @@ class AppInterface(tk.Tk):
                                        command=lambda i=x: self.delete_immunity(records[i], immu_type))
                 delete_btn.grid(row=4)
 
+    def display_modifiers(self):
+        frame = self.modifiers_frame
+        records = self.modifiers
+        widgets = self.modifiers_widgets
+        mod_array = []
+
+        if records:
+            if not isinstance(records, list):
+                records = [records]
+            for record in records:
+                for field in settings.VISIBLE_FIELDS_GUMODIF:
+                    val = getattr(record, field)
+                    if val.strip() != '':
+                        mod_array.append(val)
+        if mod_array:
+            for x, modifier in enumerate(mod_array):
+                r = self.db_manager.get_record_by_id(modifier, self.db_manager.GMODIF_TABLE, 'MODIF_ID')
+
+                self.mod_frame = tk.LabelFrame(frame, text=f"Modifier {str(x + 1)}", relief='groove',
+                                               borderwidth=1)
+                self.mod_frame.grid(row=x, column=0, sticky='nsew')
+                for idx, field in enumerate(['MODIF_ID', 'SCRIPT']):
+                    label_text = field + ': '
+                    label = tk.Label(self.mod_frame, text=label_text)
+                    label.grid(row=idx, column=0, sticky='e')
+
+                    value = getattr(r, field)
+
+                    var = tk.StringVar(value=value)
+                    widget = tk.Entry(self.mod_frame, textvariable=var)
+                    widget.configure(state='readonly')
+                    widgets[field] = (widget, var)
+                    widget.grid(row=idx, column=1, padx=(5, 10), sticky='we')
+                open_mod_btn = tk.Button(self.mod_frame, text='Open file',
+                                         command=lambda f=r.SCRIPT: self.open_modifier_file(f))
+                open_mod_btn.grid(row=4)
+
     def update_combobox_field(self, event=None):
         pass
+
+    def open_modifier_file(self, filepath: str):
+        script_directory = os.path.join(self.db_manager.root_dir, 'Scripts\\modifiers')
+        absolute_filepath = os.path.join(script_directory, filepath)
+        os.startfile(absolute_filepath)
 
     def save_changes(self):
         for frame, frame_data in self.widgets.items():
@@ -433,6 +480,7 @@ class AppInterface(tk.Tk):
         self.display_fields()
         self.display_immunities('SOURCE')
         self.display_immunities('CLASS')
+        self.display_modifiers()
 
     def rollback_changes(self):
         tables_rollbacked = 0

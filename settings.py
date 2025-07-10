@@ -1,5 +1,5 @@
 # settings.py
-VISIBLE_FIELDS_GUNITS = [
+VISIBLE_FIELDS_GUNITS = (
     'UNIT_ID',
     'UNIT_CAT',
     'LEVEL',
@@ -28,9 +28,9 @@ VISIBLE_FIELDS_GUNITS = [
     'DYN_UPG1',
     'DYN_UPG_LV',
     'DYN_UPG2'
-]
+)
 
-VISIBLE_FIELDS_GATTACKS = [
+VISIBLE_FIELDS_GATTACKS = (
     'ATT_ID',
     'INITIATIVE',
     'SOURCE',
@@ -52,9 +52,9 @@ VISIBLE_FIELDS_GATTACKS = [
     'DAM_SPLIT',
     'CRIT_DAM',
     'CRIT_POWER'
-]
+)
 
-VISIBLE_FIELDS_GDYNUPGR =[
+VISIBLE_FIELDS_GDYNUPGR = (
     'UPGRADE_ID',
     'ENROLL_C',
     'HIT_POINT',
@@ -71,7 +71,14 @@ VISIBLE_FIELDS_GDYNUPGR =[
     'HEAL',
     'INITIATIVE',
     'POWER'
-]
+)
+
+VISIBLE_FIELDS_GUMODIF = (
+    'MODIF_1',
+    'MODIF_2',
+    'MODIF_3',
+    'MODIF_4'
+)
 
 FIELD_TYPES = {
     67: {'widget': 'Entry'},     # C - Character (строка)

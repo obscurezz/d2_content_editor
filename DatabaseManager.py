@@ -10,6 +10,8 @@ class DatabaseManager:
         self.GIMMU_TABLE = None
         self.GIMMUC_TABLE = None
         self.GDYNUPGR_TABLE = None
+        self.GMODIF_TABLE = None
+        self.GUMODIF_TABLE = None
 
         self.LSUBRACE_TABLE = None
         self.subrace_options = {}
@@ -31,7 +33,8 @@ class DatabaseManager:
         :param directory: root directory for Dis2 game as string
         :return: nothing, just open the table in their mods
         """
-        globals_dir = os.path.join(directory, 'Globals')
+        self.root_dir = directory
+        globals_dir = os.path.join(self.root_dir, 'Globals')
         if not os.path.exists(globals_dir):
             return False
 
